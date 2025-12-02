@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WebRTC 音声通話アプリ
 
-## Getting Started
+2台のブラウザ間でリアルタイム音声通話ができ、会話内容を自動で文字起こしするWebアプリです。
 
-First, run the development server:
+## 機能
+
+- **ルーム機能**: ルームIDを生成・共有して2人まで参加可能
+- **音声通話**: WebRTCによるP2P音声ストリーミング
+- **ミュート**: マイクのオン/オフ切り替え
+- **文字起こし**: Web Speech APIによるリアルタイム音声認識（日本語対応）
+- **音声レベル表示**: マイク入力のインジケーター
+
+## 技術スタック
+
+- Next.js 16 (App Router)
+- TypeScript
+- WebRTC (ネイティブAPI)
+- Socket.io (シグナリング)
+- Web Speech API (音声認識)
+- Tailwind CSS
+
+## セットアップ
+
+```bash
+npm install
+```
+
+## 起動
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+http://localhost:3000 でアクセス
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 使い方
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. ブラウザで http://localhost:3000 を開く
+2. 「新しいルームを作成」をクリック
+3. 生成されたルームIDを相手に共有
+4. 相手がルームIDを入力して参加
+5. 「通話開始」ボタンで通話スタート
 
-## Learn More
+## テスト方法
 
-To learn more about Next.js, take a look at the following resources:
+同一PCで2つのブラウザタブを開いてテスト可能です。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## ブラウザ対応
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **推奨**: Chrome（Web Speech API完全対応）
+- マイクへのアクセス許可が必要
 
-## Deploy on Vercel
+## ディレクトリ構成
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── page.tsx           # ホーム（ルーム作成/参加）
+│   └── room/[id]/page.tsx # 通話ルーム
+├── components/            # UIコンポーネント
+├── hooks/                 # カスタムフック
+│   ├── useSocket.ts      # Socket.io接続
+│   ├── useWebRTC.ts      # WebRTC管理
+│   └── useSpeechRecognition.ts # 音声認識
+├── lib/                   # ユーティリティ
+└── types/                 # 型定義
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+server.js                  # Socket.ioサーバー
+```
