@@ -140,7 +140,7 @@ export const useWebRTC = ({ socket, roomId }: UseWebRTCProps): UseWebRTCReturn =
         });
       }
     } catch (error) {
-      console.error('Failed to start call:', error);
+      // エラーメッセージはgetUserMedia内で出力済み
       setCallState('error');
     }
   }, [socket, roomId, initializePeerConnection, startAudioLevelMonitoring]);

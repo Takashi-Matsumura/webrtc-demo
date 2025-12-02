@@ -58,10 +58,22 @@ export const VoiceCall = ({ roomId }: VoiceCallProps) => {
   // 通話開始時に音声認識も開始
   const handleStartCall = async () => {
     await startCall();
-    if (isSupported) {
+    // 通話が成功した場合のみ音声認識を開始（localStreamがあれば成功）
+  };
+
+  // localStreamが取得できたら音声認識を開始
+  const hasStartedListeningRef = useRef(false);
+  useEffect(() => {
+    if (localStream && isSupported && !hasStartedListeningRef.current) {
+      hasStartedListeningRef.current = true;
+      console.log('[VoiceCall] Starting speech recognition...');
       startListening();
     }
-  };
+    // localStreamがなくなったらリセット
+    if (!localStream) {
+      hasStartedListeningRef.current = false;
+    }
+  }, [localStream, isSupported, startListening]);
 
   // 通話終了時に音声認識も停止
   const handleEndCall = () => {

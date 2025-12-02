@@ -21,7 +21,23 @@ export const getUserMedia = async (): Promise<MediaStream> => {
     });
     return stream;
   } catch (error) {
-    console.error('マイクへのアクセスに失敗しました:', error);
+    if (error instanceof DOMException) {
+      switch (error.name) {
+        case 'NotFoundError':
+          console.error('マイクが見つかりません。マイクが接続されているか確認してください。');
+          break;
+        case 'NotAllowedError':
+          console.error('マイクへのアクセスが拒否されました。ブラウザの設定でマイクを許可してください。');
+          break;
+        case 'NotReadableError':
+          console.error('マイクが他のアプリケーションで使用中です。');
+          break;
+        default:
+          console.error('マイクへのアクセスに失敗しました:', error.message);
+      }
+    } else {
+      console.error('マイクへのアクセスに失敗しました:', error);
+    }
     throw error;
   }
 };
