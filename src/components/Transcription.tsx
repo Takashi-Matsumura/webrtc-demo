@@ -20,10 +20,10 @@ export const Transcription = ({
 }: TranscriptionProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 新しいトランスクリプトが追加されたら自動スクロール
+  // 新しいトランスクリプトが追加されたら先頭にスクロール
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTop = 0;
     }
   }, [transcripts]);
 
@@ -35,11 +35,32 @@ export const Transcription = ({
     });
   };
 
+  // 空のテキストをフィルタリング（trimして空文字、または意味のない短いテキストを除外）
+  const filteredTranscripts = transcripts.filter((t) => {
+    const trimmed = t.text.trim();
+    return trimmed.length > 0;
+  });
+
+  // 認識中（中間結果）のエントリがあるかチェック
+  const hasInterimResult = transcripts.some((t) => !t.isFinal && t.text.trim().length > 0);
+
   return (
     <div className="flex flex-col h-full">
       {/* ヘッダー */}
       <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-700">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">文字起こし</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">文字起こし</h2>
+          {/* 処理中インジケーター（中間結果がある時のみ表示） */}
+          {hasInterimResult && (
+            <div className="flex items-center gap-1">
+              <div className="flex gap-0.5">
+                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={isListening ? onStopListening : onStartListening}
@@ -65,7 +86,7 @@ export const Transcription = ({
         ref={scrollRef}
         className="flex-1 overflow-y-auto p-4 space-y-3 bg-zinc-50 dark:bg-zinc-900/50"
       >
-        {transcripts.length === 0 ? (
+        {filteredTranscripts.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-sm text-zinc-400 dark:text-zinc-500">
               {isListening
@@ -74,7 +95,7 @@ export const Transcription = ({
             </p>
           </div>
         ) : (
-          transcripts.map((transcript) => (
+          [...filteredTranscripts].reverse().map((transcript) => (
             <div
               key={transcript.id}
               className={`flex flex-col ${
@@ -128,7 +149,7 @@ export const Transcription = ({
             </span>
           </div>
           <span className="text-xs text-zinc-400 dark:text-zinc-500">
-            {transcripts.filter((t) => t.isFinal).length} 件の発言
+            {filteredTranscripts.filter((t) => t.isFinal).length} 件の発言
           </span>
         </div>
       </div>

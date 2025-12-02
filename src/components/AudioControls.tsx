@@ -54,18 +54,18 @@ export const AudioControls = ({
   };
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      {/* 通話状態 */}
-      <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 lg:flex-col lg:gap-4">
+      {/* 通話状態（モバイルでは非表示、デスクトップで表示） */}
+      <div className="hidden lg:flex items-center gap-2">
         <div className={`w-3 h-3 rounded-full ${getStatusColor()}`} />
         <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
           {getStatusText()}
         </span>
       </div>
 
-      {/* 音声レベルインジケーター */}
+      {/* 音声レベルインジケーター（デスクトップのみ） */}
       {callState === 'connected' && (
-        <div className="w-32 h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+        <div className="hidden lg:block w-32 h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
           <div
             className="h-full bg-green-500 transition-all duration-75"
             style={{ width: `${Math.min(audioLevel * 100, 100)}%` }}
@@ -74,16 +74,16 @@ export const AudioControls = ({
       )}
 
       {/* コントロールボタン */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {callState === 'idle' || callState === 'disconnected' ? (
           <button
             onClick={onStartCall}
-            className="flex items-center justify-center w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full transition-colors shadow-lg"
+            className="flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white rounded-full transition-colors shadow-lg"
             title="通話開始"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-8 w-8"
+              className="h-7 w-7 lg:h-8 lg:w-8"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -98,13 +98,20 @@ export const AudioControls = ({
           </button>
         ) : (
           <>
+            {/* 通話状態インジケーター（モバイル用・接続中のみ） */}
+            {callState === 'connecting' && (
+              <div className="lg:hidden flex items-center">
+                <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
+              </div>
+            )}
+
             {/* ミュートボタン */}
             <button
               onClick={onToggleMute}
-              className={`flex items-center justify-center w-14 h-14 rounded-full transition-colors shadow-lg ${
+              className={`flex items-center justify-center w-12 h-12 lg:w-14 lg:h-14 rounded-full transition-colors shadow-lg ${
                 isMuted
-                  ? 'bg-red-500 hover:bg-red-600 text-white'
-                  : 'bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300'
+                  ? 'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white'
+                  : 'bg-zinc-200 hover:bg-zinc-300 active:bg-zinc-400 dark:bg-zinc-700 dark:hover:bg-zinc-600 dark:active:bg-zinc-500 text-zinc-700 dark:text-zinc-300'
               }`}
               title={isMuted ? 'ミュート解除' : 'ミュート'}
             >
@@ -151,7 +158,7 @@ export const AudioControls = ({
             {/* 通話終了ボタン */}
             <button
               onClick={onEndCall}
-              className="flex items-center justify-center w-14 h-14 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors shadow-lg"
+              className="flex items-center justify-center w-14 h-14 lg:w-14 lg:h-14 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-full transition-colors shadow-lg"
               title="通話終了"
             >
               <svg

@@ -45,6 +45,60 @@ http://localhost:3000 でアクセス
 
 同一PCで2つのブラウザタブを開いてテスト可能です。
 
+## 異なるデバイス間でのテスト（ngrok）
+
+PCとスマートフォンなど、異なるデバイス間でテストする場合は、ngrokを使用してローカルサーバーを外部公開できます。
+
+### ngrokとは
+
+ngrokは、ローカルで動作しているWebサーバーを一時的にインターネットに公開できるトンネリングツールです。無料プランでも基本的な機能が利用可能です。
+
+### ngrokのセットアップ
+
+1. **ngrokのインストール**
+
+   ```bash
+   # macOS (Homebrew)
+   brew install ngrok
+
+   # または公式サイトからダウンロード
+   # https://ngrok.com/download
+   ```
+
+2. **アカウント作成とAuthtoken設定**
+
+   - [ngrok.com](https://ngrok.com) でアカウントを作成（無料）
+   - ダッシュボードからAuthtokenをコピー
+   - Authtokenを設定：
+
+   ```bash
+   ngrok config add-authtoken YOUR_AUTHTOKEN
+   ```
+
+3. **開発サーバーを起動**
+
+   ```bash
+   npm run dev
+   ```
+
+4. **ngrokでトンネルを作成**
+
+   別のターミナルで：
+
+   ```bash
+   ngrok http 3000
+   ```
+
+5. **生成されたURLを使用**
+
+   ngrokが表示する `https://xxxx-xxxx-xxxx.ngrok-free.dev` のURLを使用してアクセス
+
+### 注意事項
+
+- 無料プランでは初回アクセス時に警告ページが表示されます（「Visit Site」をクリックして進む）
+- ngrokのURLは一時的なもので、再起動するたびに変わります
+- WebRTCとWeb Speech APIはHTTPS環境が必要なため、ngrokのHTTPS URLを使用してください
+
 ## ブラウザ対応
 
 - **推奨**: Chrome（Web Speech API完全対応）

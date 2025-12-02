@@ -17,9 +17,9 @@ export default function RoomPage({ params }: RoomPageProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-100 dark:bg-zinc-900">
+    <div className="h-screen flex flex-col bg-zinc-100 dark:bg-zinc-900 overflow-hidden">
       {/* ヘッダー */}
-      <header className="flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
+      <header className="flex-shrink-0 flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
         <button
           onClick={handleBack}
           className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
@@ -47,7 +47,7 @@ export default function RoomPage({ params }: RoomPageProps) {
       </header>
 
       {/* メインコンテンツ */}
-      <main className="flex-1 p-4">
+      <main className="flex-1 p-4 min-h-0">
         <div className="h-full max-w-6xl mx-auto">
           <VoiceCall roomId={roomId} />
         </div>
