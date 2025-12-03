@@ -37,7 +37,7 @@ export const useSocket = (): UseSocketReturn => {
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
-      disconnectSocket();
+      // ソケットは切断しない - アプリ全体で維持する
     };
   }, []);
 

@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "scheme": "voicechat",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.voicechat.app",
+      "bundleIdentifier": "com.takashimats.voicechat",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "音声通話のためにマイクを使用します",
         "NSSpeechRecognitionUsageDescription": "音声を文字に変換するために使用します"
@@ -37,21 +37,7 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router",
-      [
-        "react-native-webrtc",
-        {
-          "cameraPermission": false,
-          "microphonePermission": "音声通話のためにマイクを使用します"
-        }
-      ],
-      [
-        "@react-native-voice/voice",
-        {
-          "microphonePermission": "音声を文字に変換するために使用します",
-          "speechRecognitionPermission": "音声を文字に変換するために使用します"
-        }
-      ]
+      "expo-router"
     ]
   }
 }

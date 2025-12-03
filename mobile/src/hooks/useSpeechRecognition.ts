@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Voice, { SpeechResultsEvent, SpeechErrorEvent } from '@react-native-voice/voice';
-import { v4 as uuidv4 } from 'uuid';
 import { TranscriptEntry } from '../types';
+
+// Simple ID generator for React Native (uuid requires crypto polyfill)
+const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
 interface UseSpeechRecognitionProps {
   language?: string;
@@ -45,7 +47,7 @@ export const useSpeechRecognition = ({
       }
 
       // 新規結果
-      const newId = uuidv4();
+      const newId = generateId();
       currentTranscriptIdRef.current = newId;
       return [
         ...prev,
@@ -81,7 +83,7 @@ export const useSpeechRecognition = ({
       }
 
       // 新規中間結果
-      const newId = uuidv4();
+      const newId = generateId();
       currentTranscriptIdRef.current = newId;
       return [
         ...prev,
@@ -126,18 +128,33 @@ export const useSpeechRecognition = ({
 
   // イベントリスナーの設定
   useEffect(() => {
-    Voice.onSpeechResults = onSpeechResults;
-    Voice.onSpeechPartialResults = onSpeechPartialResults;
-    Voice.onSpeechError = onSpeechError;
-    Voice.onSpeechEnd = onSpeechEnd;
+    let mounted = true;
 
-    // サポートチェック
-    Voice.isAvailable().then((available) => {
-      setIsSupported(!!available);
-    });
+    const initVoice = async () => {
+      try {
+        Voice.onSpeechResults = onSpeechResults;
+        Voice.onSpeechPartialResults = onSpeechPartialResults;
+        Voice.onSpeechError = onSpeechError;
+        Voice.onSpeechEnd = onSpeechEnd;
+
+        // サポートチェック
+        const available = await Voice.isAvailable();
+        if (mounted) {
+          setIsSupported(!!available);
+        }
+      } catch (error) {
+        console.log('Voice initialization failed:', error);
+        if (mounted) {
+          setIsSupported(false);
+        }
+      }
+    };
+
+    initVoice();
 
     return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
+      mounted = false;
+      Voice.destroy().then(Voice.removeAllListeners).catch(() => {});
     };
   }, [onSpeechResults, onSpeechPartialResults, onSpeechError, onSpeechEnd]);
 
@@ -176,7 +193,7 @@ export const useSpeechRecognition = ({
     setTranscripts((prev) => [
       ...prev,
       {
-        id: uuidv4(),
+        id: generateId(),
         speaker: 'remote',
         text,
         timestamp: new Date(),
