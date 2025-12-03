@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "VoiceChat",
+    "slug": "voice-chat",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "scheme": "voicechat",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.voicechat.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "音声通話のためにマイクを使用します",
+        "NSSpeechRecognitionUsageDescription": "音声を文字に変換するために使用します"
+      }
+    },
+    "android": {
+      "package": "com.voicechat.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "react-native-webrtc",
+        {
+          "cameraPermission": false,
+          "microphonePermission": "音声通話のためにマイクを使用します"
+        }
+      ],
+      [
+        "@react-native-voice/voice",
+        {
+          "microphonePermission": "音声を文字に変換するために使用します",
+          "speechRecognitionPermission": "音声を文字に変換するために使用します"
+        }
+      ]
+    ]
+  }
+}

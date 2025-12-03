@@ -36,7 +36,7 @@ app.prepare().then(() => {
       const roomId = uuidv4().substring(0, 8);
       rooms.set(roomId, {
         id: roomId,
-        participants: [],  // 作成時は参加者を追加しない（join-roomで追加）
+        participants: [],
         createdAt: new Date(),
       });
       socket.emit('room-created', roomId);
@@ -134,9 +134,8 @@ app.prepare().then(() => {
       socket.to(roomId).emit('user-left', socket.id);
       socket.leave(roomId);
 
-      // ルームが空になったら5分後に削除（その間に再接続可能）
+      // ルームが空になったら5分後に削除
       if (room.participants.length === 0) {
-        // 既存のタイマーがあればクリア
         if (roomDeletionTimers.has(roomId)) {
           clearTimeout(roomDeletionTimers.get(roomId));
         }
@@ -148,7 +147,7 @@ app.prepare().then(() => {
             roomDeletionTimers.delete(roomId);
             console.log(`Room ${roomId} deleted (empty for 5 minutes)`);
           }
-        }, 5 * 60 * 1000); // 5分
+        }, 5 * 60 * 1000);
 
         roomDeletionTimers.set(roomId, timer);
         console.log(`Room ${roomId} will be deleted in 5 minutes if no one joins`);
