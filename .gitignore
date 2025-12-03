@@ -45,3 +45,8 @@ next-env.d.ts
 .expo/
 ios/
 android/
+
+# Editor
+*.swp
+*.swo
+*~
