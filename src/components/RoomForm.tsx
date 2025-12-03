@@ -12,7 +12,16 @@ interface RoomFormProps {
 export const RoomForm = ({ onCreateRoom, onJoinRoom, createdRoomId }: RoomFormProps) => {
   const [roomId, setRoomId] = useState('');
   const [mode, setMode] = useState<'create' | 'join'>('create');
+  const [copied, setCopied] = useState(false);
   const router = useRouter();
+
+  const handleCopyRoomId = () => {
+    if (createdRoomId) {
+      navigator.clipboard.writeText(createdRoomId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const handleCreateRoom = () => {
     onCreateRoom();
@@ -77,26 +86,33 @@ export const RoomForm = ({ onCreateRoom, onJoinRoom, createdRoomId }: RoomFormPr
                   <span className="font-mono text-lg font-bold text-green-700 dark:text-green-300">
                     {createdRoomId}
                   </span>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(createdRoomId)}
-                    className="p-1 text-green-600 hover:text-green-700 dark:text-green-400"
-                    title="コピー"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
+                  <div className="relative">
+                    <button
+                      onClick={handleCopyRoomId}
+                      className="p-1 text-green-600 hover:text-green-700 dark:text-green-400"
+                      title="コピー"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </button>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </button>
+                    {copied && (
+                      <span className="absolute left-1/2 -translate-x-1/2 -top-8 px-2 py-1 text-xs text-white bg-zinc-800 dark:bg-zinc-600 rounded whitespace-nowrap">
+                        コピーしました
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <button

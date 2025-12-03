@@ -124,6 +124,13 @@ export const useSpeechRecognition = ({
         return;
       }
 
+      // 'network' エラーは一時的な問題の可能性があるのでリトライ
+      if (event.error === 'network') {
+        console.warn('[SpeechRecognition] Network error, will retry on next restart');
+        // onendで自動リトライされるのでここでは状態をリセットしない
+        return;
+      }
+
       // 'not-allowed' はマイク権限の問題
       if (event.error === 'not-allowed') {
         console.warn('音声認識: マイクへのアクセスが許可されていません。');
