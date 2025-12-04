@@ -452,3 +452,222 @@ npx expo prebuild --platform ios
 - 1年間有効な証明書
 - App Storeへの配布が可能
 - TestFlightでのベータ配布
+
+---
+
+## 本番環境へのデプロイ
+
+### アーキテクチャ概要
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    シグナリングサーバー                        │
+│                   (Render / Socket.io)                      │
+│                                                             │
+│  役割:                                                       │
+│  ・ルームの作成・管理                                          │
+│  ・ユーザー同士を「引き合わせる」                                │
+│  ・WebRTC接続情報（Offer/Answer/ICE）の中継                   │
+└─────────────────────────────────────────────────────────────┘
+          ↑                                    ↑
+          │ ① 接続確立時のみ通信                   │
+          │    (シグナリング)                      │
+          ↓                                    ↓
+┌──────────────────┐                  ┌──────────────────┐
+│   iPhone A       │◄────────────────►│   iPhone B       │
+│                  │  ② 音声データは   │                  │
+│                  │    P2P直接通信    │                  │
+└──────────────────┘                  └──────────────────┘
+```
+
+**重要**: サーバーは接続確立時のみ使用され、音声データはP2P（端末間直接通信）で送受信されます。
+
+### 通信の流れ
+
+| 段階 | 処理 | サーバー経由 |
+|------|------|-------------|
+| 1 | ルーム作成・参加 | ✅ Yes |
+| 2 | WebRTC Offer/Answer交換 | ✅ Yes |
+| 3 | ICE Candidate交換 | ✅ Yes |
+| 4 | **音声通話** | ❌ No (P2P) |
+
+---
+
+### Renderへのサーバーデプロイ
+
+[Render](https://render.com) は無料でNode.jsサーバーをホスティングできるサービスです。
+
+#### 無料プランの特徴
+
+| 項目 | 内容 |
+|------|------|
+| 月間稼働時間 | 750時間（1台なら常時稼働可能） |
+| HTTPS/WSS | 自動対応（SSL証明書自動発行） |
+| スリープ | 15分間アクセスなしでスリープ |
+| 起動時間 | スリープ後の初回アクセスで最大50秒 |
+
+#### デプロイ手順
+
+1. **Renderアカウント作成**
+   - https://render.com にアクセス
+   - GitHubアカウントでサインアップ（連携が楽）
+
+2. **新しいWeb Serviceを作成**
+   - ダッシュボードで「**New +**」→「**Web Service**」
+   - 「**Build and deploy from a Git repository**」を選択
+   - GitHubリポジトリを選択
+
+3. **設定項目**
+
+   | 項目 | 値 |
+   |------|-----|
+   | **Name** | `webrtc-signaling`（URLになる） |
+   | **Region** | `Oregon (US West)` |
+   | **Branch** | `main` |
+   | **Root Directory** | `server` ⚠️ 重要 |
+   | **Runtime** | `Node` |
+   | **Build Command** | `npm install` |
+   | **Start Command** | `npm start` |
+   | **Instance Type** | `Free` |
+
+4. **デプロイ**
+   - 「**Create Web Service**」をクリック
+   - 自動でデプロイが開始される
+   - 完了するとURLが発行される（例: `https://webrtc-signaling-xxxx.onrender.com`）
+
+#### デプロイ時の注意点
+
+サーバーが正常に動作するには、以下の設定が必要です：
+
+```javascript
+// server/server.js
+
+// ✅ 外部からアクセス可能にする（0.0.0.0にバインド）
+server.listen(port, '0.0.0.0', () => {
+  console.log(`> Signaling server ready on port ${port}`);
+});
+
+// ✅ ヘルスチェック用エンドポイント
+const server = createServer((req, res) => {
+  if (req.url === '/' || req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('OK');
+  } else {
+    res.writeHead(404);
+    res.end();
+  }
+});
+```
+
+---
+
+### 環境変数の管理（開発/本番切り替え）
+
+#### ファイル構成
+
+```
+mobile/
+├── .env              ← 開発用（ローカルサーバー）
+├── .env.production   ← 本番用（Render）
+├── .env.example      ← テンプレート
+└── eas.json          ← EAS Buildプロファイル
+```
+
+#### 環境変数の設定
+
+```bash
+# 開発用 (.env)
+EXPO_PUBLIC_SIGNALING_SERVER_URL=http://192.168.1.11:3001
+
+# 本番用 (.env.production)
+EXPO_PUBLIC_SIGNALING_SERVER_URL=https://webrtc-signaling-xxxx.onrender.com
+```
+
+#### EAS Buildプロファイル (eas.json)
+
+```json
+{
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SIGNALING_SERVER_URL": "http://192.168.1.11:3001"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SIGNALING_SERVER_URL": "https://webrtc-signaling-xxxx.onrender.com"
+      }
+    },
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_SIGNALING_SERVER_URL": "https://webrtc-signaling-xxxx.onrender.com"
+      }
+    }
+  }
+}
+```
+
+---
+
+### TestFlightでの配布
+
+TestFlightを使用すると、App Storeに公開せずにアプリを配布できます。
+
+#### TestFlightの特徴
+
+| 項目 | 内容 |
+|------|------|
+| 公開範囲 | 招待したメールアドレスのみ |
+| 最大人数 | 10,000人 |
+| 有効期限 | 90日（新ビルドで更新可能） |
+| 審査 | 軽い審査あり（1-2日） |
+
+#### ビルドからTestFlightまでの流れ
+
+```bash
+# 1. EAS CLIのインストール
+npm install -g eas-cli
+
+# 2. Expoにログイン
+eas login
+
+# 3. プロジェクト設定
+cd mobile
+eas build:configure
+
+# 4. 本番用ビルド（App Store Connect にアップロード）
+eas build --platform ios --profile production
+
+# 5. App Store Connectに提出
+eas submit --platform ios
+```
+
+#### TestFlightでの配布手順
+
+1. [App Store Connect](https://appstoreconnect.apple.com) にアクセス
+2. アプリを選択 → 「TestFlight」タブ
+3. ビルドが処理されるのを待つ
+4. 「内部テスター」または「外部テスター」を追加
+5. テスターのメールアドレスを入力して招待
+
+#### テスターのインストール方法
+
+1. iPhoneで**TestFlight**アプリをダウンロード（App Storeから）
+2. 招待メールのリンクをタップ
+3. TestFlightアプリでアプリをインストール
+
+---
+
+### 本番環境チェックリスト
+
+- [ ] Renderにシグナリングサーバーをデプロイ
+- [ ] サーバーURLを取得（`https://xxx.onrender.com`）
+- [ ] `mobile/.env.production` にURLを設定
+- [ ] `mobile/eas.json` のプロファイルを更新
+- [ ] Apple Developer Program に登録（$99/年）
+- [ ] EAS Buildで本番ビルドを作成
+- [ ] App Store Connect にアップロード
+- [ ] TestFlightでテスター招待

@@ -1,0 +1,28 @@
+{
+  "cli": {
+    "version": ">= 5.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SIGNALING_SERVER_URL": "http://192.168.1.11:3001"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SIGNALING_SERVER_URL": "https://webrtc-signaling-0vv4.onrender.com"
+      }
+    },
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_SIGNALING_SERVER_URL": "https://webrtc-signaling-0vv4.onrender.com"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

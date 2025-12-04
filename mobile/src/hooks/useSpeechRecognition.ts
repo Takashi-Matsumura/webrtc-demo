@@ -31,6 +31,9 @@ export const useSpeechRecognition = ({
 
   // 音声認識結果のハンドラ
   const onSpeechResults = useCallback((event: SpeechResultsEvent) => {
+    // 停止後のイベントは無視
+    if (!isListeningRef.current) return;
+
     const results = event.value;
     if (!results || results.length === 0) return;
 
@@ -61,12 +64,14 @@ export const useSpeechRecognition = ({
       ];
     });
 
-    // 確定後はIDをリセット
-    currentTranscriptIdRef.current = null;
+    // IDはonSpeechEndでリセットする（同じ発話内の結果は同じエントリを更新）
   }, []);
 
   // 部分的な結果のハンドラ
   const onSpeechPartialResults = useCallback((event: SpeechResultsEvent) => {
+    // 停止後のイベントは無視
+    if (!isListeningRef.current) return;
+
     const results = event.value;
     if (!results || results.length === 0) return;
 

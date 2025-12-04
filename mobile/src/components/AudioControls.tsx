@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { CallState } from '../types';
 
 interface AudioControlsProps {
@@ -43,27 +44,25 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
       <View style={styles.buttons}>
         {!isCallActive ? (
           <TouchableOpacity
-            style={[styles.button, styles.startButton]}
+            style={[styles.iconButton, styles.startButton]}
             onPress={onStartCall}
           >
-            <Text style={styles.buttonText}>通話開始</Text>
+            <Ionicons name="call" size={32} color="#fff" />
           </TouchableOpacity>
         ) : (
           <>
             <TouchableOpacity
-              style={[styles.button, isMuted ? styles.mutedButton : styles.muteButton]}
+              style={[styles.iconButton, isMuted ? styles.mutedButton : styles.muteButton]}
               onPress={onToggleMute}
             >
-              <Text style={styles.buttonText}>
-                {isMuted ? 'ミュート解除' : 'ミュート'}
-              </Text>
+              <Ionicons name={isMuted ? 'mic-off' : 'mic'} size={28} color="#fff" />
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.button, styles.endButton]}
+              style={[styles.iconButton, styles.endButton]}
               onPress={onEndCall}
             >
-              <Text style={styles.buttonText}>終了</Text>
+              <Ionicons name="call" size={32} color="#fff" style={styles.endCallIcon} />
             </TouchableOpacity>
           </>
         )}
@@ -84,14 +83,14 @@ const styles = StyleSheet.create({
   },
   buttons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 20,
   },
-  button: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 30,
-    minWidth: 100,
+  iconButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   startButton: {
     backgroundColor: '#22c55e',
@@ -105,9 +104,7 @@ const styles = StyleSheet.create({
   endButton: {
     backgroundColor: '#ef4444',
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  endCallIcon: {
+    transform: [{ rotate: '135deg' }],
   },
 });
