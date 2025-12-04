@@ -8,7 +8,16 @@ const port = parseInt(process.env.PORT || '3001', 10);
 const rooms = new Map();
 const roomDeletionTimers = new Map();
 
-const server = createServer();
+const server = createServer((req, res) => {
+  // ヘルスチェック用エンドポイント
+  if (req.url === '/' || req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('OK');
+  } else {
+    res.writeHead(404);
+    res.end();
+  }
+});
 
 const io = new Server(server, {
   cors: {
