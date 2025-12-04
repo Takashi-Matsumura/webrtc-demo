@@ -145,6 +145,6 @@ function leaveRoom(socket, roomId) {
   console.log(`User ${socket.id} left room ${roomId}`);
 }
 
-server.listen(port, () => {
-  console.log(`> Signaling server ready on http://localhost:${port}`);
+server.listen(port, '0.0.0.0', () => {
+  console.log(`> Signaling server ready on port ${port}`);
 });
