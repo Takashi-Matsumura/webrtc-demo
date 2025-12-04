@@ -23,7 +23,8 @@ webrtc-demo/
 ## 技術スタック
 
 ### Web版
-- Next.js 16 (App Router)
+- Next.js 16.0.7 (App Router)
+- React 19.2.1
 - TypeScript
 - WebRTC (ネイティブAPI)
 - Socket.io (シグナリング)
@@ -671,3 +672,19 @@ eas submit --platform ios
 - [ ] EAS Buildで本番ビルドを作成
 - [ ] App Store Connect にアップロード
 - [ ] TestFlightでテスター招待
+
+---
+
+## セキュリティ
+
+### CVE-2025-55182 対応済み (2025年12月)
+
+React Server Componentsにおける重大なリモートコード実行（RCE）脆弱性 **CVE-2025-55182** に対応済みです。
+
+| パッケージ | 対応バージョン |
+|-----------|--------------|
+| React | 19.2.1 |
+| react-dom | 19.2.1 |
+| Next.js | 16.0.7 |
+
+詳細: https://react.dev/blog/2025/12/03/critical-security-vulnerability-in-react-server-components
