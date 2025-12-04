@@ -5,6 +5,9 @@ import { TranscriptEntry } from '../types';
 // Simple ID generator for React Native (uuid requires crypto polyfill)
 const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+// 無音検出のタイムアウト（ミリ秒）
+const SILENCE_TIMEOUT_MS = 2000;
+
 interface UseSpeechRecognitionProps {
   language?: string;
 }
@@ -28,19 +31,99 @@ export const useSpeechRecognition = ({
 
   const currentTranscriptIdRef = useRef<string | null>(null);
   const isListeningRef = useRef(false);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // 確定済みテキストの長さを追跡（新しいテキストのみを抽出するため）
+  const lastFinalizedTextLengthRef = useRef(0);
+
+  // 無音タイマーをリセット
+  const resetSilenceTimer = useCallback(() => {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+  }, []);
+
+  // 音声認識を再起動するヘルパー関数
+  const restartRecognition = useCallback(async (retryCount = 0) => {
+    if (!isListeningRef.current) return;
+
+    const maxRetries = 3;
+    const delay = 300 + retryCount * 200;
+
+    try {
+      await Voice.stop().catch(() => {});
+      await Voice.cancel().catch(() => {});
+      await new Promise(resolve => setTimeout(resolve, delay));
+
+      if (!isListeningRef.current) return;
+
+      await Voice.start(language);
+      console.log('Speech recognition restarted successfully');
+    } catch (error) {
+      console.log(`Speech recognition restart failed (attempt ${retryCount + 1}):`, error);
+
+      if (retryCount < maxRetries && isListeningRef.current) {
+        setTimeout(() => restartRecognition(retryCount + 1), delay);
+      }
+    }
+  }, [language]);
+
+  // 無音タイマーを開始
+  const startSilenceTimer = useCallback(() => {
+    resetSilenceTimer();
+
+    if (!isListeningRef.current) return;
+
+    silenceTimerRef.current = setTimeout(() => {
+      if (isListeningRef.current && currentTranscriptIdRef.current) {
+        console.log('Silence detected, finalizing current session...');
+
+        // 現在のセッションをfinalにする
+        setTranscripts((prev) => {
+          const current = prev.find(t => t.id === currentTranscriptIdRef.current);
+          if (current) {
+            // 累積長を更新（置き換えではなく加算）
+            lastFinalizedTextLengthRef.current += current.text.length;
+            console.log('Finalized text length (累積):', lastFinalizedTextLengthRef.current);
+          }
+          return prev.map((t) =>
+            t.id === currentTranscriptIdRef.current
+              ? { ...t, isFinal: true }
+              : t
+          );
+        });
+
+        // 新しいセッション用にIDをリセット
+        currentTranscriptIdRef.current = null;
+        console.log('Session finalized, ready for new input');
+      }
+    }, SILENCE_TIMEOUT_MS);
+  }, [resetSilenceTimer]);
+
+  // テキストから新しい部分のみを抽出
+  const extractNewText = useCallback((fullText: string): string => {
+    if (lastFinalizedTextLengthRef.current === 0) {
+      return fullText;
+    }
+    // 累積テキストから既に確定した部分を除去
+    const newText = fullText.substring(lastFinalizedTextLengthRef.current).trim();
+    return newText || fullText; // 新しいテキストがなければ全体を返す（フォールバック）
+  }, []);
 
   // 音声認識結果のハンドラ
   const onSpeechResults = useCallback((event: SpeechResultsEvent) => {
-    // 停止後のイベントは無視
     if (!isListeningRef.current) return;
 
     const results = event.value;
     if (!results || results.length === 0) return;
 
-    const transcript = results[0];
+    const fullTranscript = results[0];
+    const transcript = extractNewText(fullTranscript);
+
+    // 空のテキストは無視
+    if (!transcript.trim()) return;
 
     setTranscripts((prev) => {
-      // 中間結果の更新
       if (currentTranscriptIdRef.current) {
         return prev.map((t) =>
           t.id === currentTranscriptIdRef.current
@@ -49,7 +132,6 @@ export const useSpeechRecognition = ({
         );
       }
 
-      // 新規結果
       const newId = generateId();
       currentTranscriptIdRef.current = newId;
       return [
@@ -64,21 +146,23 @@ export const useSpeechRecognition = ({
       ];
     });
 
-    // IDはonSpeechEndでリセットする（同じ発話内の結果は同じエントリを更新）
-  }, []);
+    startSilenceTimer();
+  }, [startSilenceTimer, extractNewText]);
 
   // 部分的な結果のハンドラ
   const onSpeechPartialResults = useCallback((event: SpeechResultsEvent) => {
-    // 停止後のイベントは無視
     if (!isListeningRef.current) return;
 
     const results = event.value;
     if (!results || results.length === 0) return;
 
-    const transcript = results[0];
+    const fullTranscript = results[0];
+    const transcript = extractNewText(fullTranscript);
+
+    // 空のテキストは無視
+    if (!transcript.trim()) return;
 
     setTranscripts((prev) => {
-      // 既存の中間結果を更新
       if (currentTranscriptIdRef.current) {
         return prev.map((t) =>
           t.id === currentTranscriptIdRef.current
@@ -87,7 +171,6 @@ export const useSpeechRecognition = ({
         );
       }
 
-      // 新規中間結果
       const newId = generateId();
       currentTranscriptIdRef.current = newId;
       return [
@@ -101,35 +184,36 @@ export const useSpeechRecognition = ({
         },
       ];
     });
-  }, []);
+
+    startSilenceTimer();
+  }, [startSilenceTimer, extractNewText]);
 
   // エラーハンドラ
   const onSpeechError = useCallback((event: SpeechErrorEvent) => {
     console.log('Speech recognition error:', event.error);
-    // 自動リトライ
     if (isListeningRef.current) {
-      setTimeout(() => {
-        if (isListeningRef.current) {
-          Voice.start(language).catch(console.error);
-        }
-      }, 100);
+      restartRecognition(0);
     }
-  }, [language]);
+  }, [restartRecognition]);
+
+  // 開始ハンドラ
+  const onSpeechStart = useCallback(() => {
+    console.log('Speech recognition session started (onSpeechStart)');
+    startSilenceTimer();
+  }, [startSilenceTimer]);
 
   // 終了ハンドラ（自動再起動）
   const onSpeechEnd = useCallback(() => {
     console.log('Speech recognition ended');
     currentTranscriptIdRef.current = null;
 
-    // continuous modeをエミュレート
     if (isListeningRef.current) {
-      setTimeout(() => {
-        if (isListeningRef.current) {
-          Voice.start(language).catch(console.error);
-        }
-      }, 100);
+      console.log('Auto-restarting speech recognition...');
+      // onSpeechEndで再起動する場合、テキストバッファがリセットされる
+      lastFinalizedTextLengthRef.current = 0;
+      restartRecognition(0);
     }
-  }, [language]);
+  }, [restartRecognition]);
 
   // イベントリスナーの設定
   useEffect(() => {
@@ -137,12 +221,12 @@ export const useSpeechRecognition = ({
 
     const initVoice = async () => {
       try {
+        Voice.onSpeechStart = onSpeechStart;
         Voice.onSpeechResults = onSpeechResults;
         Voice.onSpeechPartialResults = onSpeechPartialResults;
         Voice.onSpeechError = onSpeechError;
         Voice.onSpeechEnd = onSpeechEnd;
 
-        // サポートチェック
         const available = await Voice.isAvailable();
         if (mounted) {
           setIsSupported(!!available);
@@ -161,7 +245,7 @@ export const useSpeechRecognition = ({
       mounted = false;
       Voice.destroy().then(Voice.removeAllListeners).catch(() => {});
     };
-  }, [onSpeechResults, onSpeechPartialResults, onSpeechError, onSpeechEnd]);
+  }, [onSpeechStart, onSpeechResults, onSpeechPartialResults, onSpeechError, onSpeechEnd]);
 
   // 音声認識開始
   const startListening = useCallback(async () => {
@@ -170,6 +254,7 @@ export const useSpeechRecognition = ({
     try {
       isListeningRef.current = true;
       setIsListening(true);
+      lastFinalizedTextLengthRef.current = 0; // リセット
       await Voice.start(language);
       console.log('Speech recognition started');
     } catch (error) {
@@ -184,6 +269,8 @@ export const useSpeechRecognition = ({
     isListeningRef.current = false;
     setIsListening(false);
     currentTranscriptIdRef.current = null;
+    lastFinalizedTextLengthRef.current = 0;
+    resetSilenceTimer();
 
     try {
       await Voice.stop();
@@ -191,7 +278,7 @@ export const useSpeechRecognition = ({
     } catch (error) {
       console.log('Stop error (ignored):', error);
     }
-  }, []);
+  }, [resetSilenceTimer]);
 
   // リモートの文字起こしを追加
   const addRemoteTranscript = useCallback((text: string, isFinal: boolean) => {
@@ -210,6 +297,7 @@ export const useSpeechRecognition = ({
   // 文字起こし履歴をクリア
   const clearTranscripts = useCallback(() => {
     setTranscripts([]);
+    lastFinalizedTextLengthRef.current = 0;
   }, []);
 
   return {

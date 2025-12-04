@@ -56,11 +56,20 @@ export const Transcription: React.FC<TranscriptionProps> = ({
               style={[
                 styles.transcriptEntry,
                 entry.speaker === 'local' ? styles.localEntry : styles.remoteEntry,
+                !entry.isFinal && styles.activeSession,
               ]}
             >
-              <Text style={styles.speaker}>
-                {entry.speaker === 'local' ? 'あなた' : '相手'}
-              </Text>
+              <View style={styles.speakerRow}>
+                <Text style={styles.speaker}>
+                  {entry.speaker === 'local' ? 'あなた' : '相手'}
+                </Text>
+                {!entry.isFinal && (
+                  <View style={styles.sessionIndicator}>
+                    <View style={styles.sessionDot} />
+                    <Text style={styles.sessionText}>入力中</Text>
+                  </View>
+                )}
+              </View>
               <Text
                 style={[
                   styles.transcriptText,
@@ -141,6 +150,8 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     maxWidth: '85%',
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   localEntry: {
     backgroundColor: '#dbeafe',
@@ -150,10 +161,35 @@ const styles = StyleSheet.create({
     backgroundColor: '#f3f4f6',
     alignSelf: 'flex-start',
   },
+  activeSession: {
+    borderColor: '#3b82f6',
+    borderStyle: 'solid',
+  },
+  speakerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
   speaker: {
     fontSize: 12,
     color: '#6b7280',
-    marginBottom: 4,
+  },
+  sessionIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  sessionDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#3b82f6',
+  },
+  sessionText: {
+    fontSize: 10,
+    color: '#3b82f6',
+    fontWeight: '500',
   },
   transcriptText: {
     fontSize: 15,

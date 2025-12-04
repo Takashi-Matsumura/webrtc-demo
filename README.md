@@ -357,6 +357,83 @@ npx expo start --dev-client
 # → http://192.168.1.11:8081 に接続
 ```
 
+### テザリング環境での開発（外出先など）
+
+自宅のWiFi環境以外で、iPhoneのインターネット共有（テザリング）を使ってMacを接続している場合、通常の方法では実機開発ができません。
+
+#### なぜテザリング環境では接続できないのか
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│              iPhoneのインターネット共有                        │
+│                                                             │
+│  ┌─────────────┐         ┌─────────────┐                   │
+│  │   iPhone    │────X────│    Mac      │                   │
+│  │  (アプリ)   │ 通信不可  │ (Metro)    │                   │
+│  │ 192.0.0.1   │         │ 192.0.0.2   │                   │
+│  └─────────────┘         └─────────────┘                   │
+│                                                             │
+│  ⚠️ iPhoneは自身のホットスポットに接続した                      │
+│     デバイスに直接アクセスできない制限がある                     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 解決策: ngrokトンネルを使用
+
+ngrokトンネルを使用すると、インターネット経由で接続できます。
+
+```bash
+# 1. ngrokをインストール（初回のみ）
+npm install -g @expo/ngrok@^4.1.0
+
+# または、プロジェクトにローカルインストール
+cd mobile
+npm install @expo/ngrok --save-dev
+
+# 2. トンネル付きでMetro Bundlerを起動
+npx expo start --dev-client --tunnel
+```
+
+#### 接続方法
+
+1. Metro Bundlerが起動したら、トンネルURLを確認：
+   ```bash
+   # トンネルURLを取得
+   curl -s http://127.0.0.1:4040/api/tunnels | grep -o '"public_url":"https://[^"]*"'
+   ```
+
+   例: `https://xxxx-anonymous-8081.exp.direct`
+
+2. iPhoneアプリで「Enter URL manually」を選択
+
+3. **HTTPSのURL**を入力（`https://` が重要）:
+   ```
+   https://xxxx-anonymous-8081.exp.direct
+   ```
+
+#### 重要なポイント
+
+| 項目 | 説明 |
+|------|------|
+| **HTTPSを使用** | iOSのApp Transport Securityにより、外部URLはHTTPSが必須 |
+| **HTTPは不可** | `http://` で始まるURLは接続できない |
+| **URLは毎回変わる** | ngrokを再起動するたびに新しいURLが発行される |
+| **遅延が増える** | トンネル経由のため、ローカル接続より若干遅い |
+
+#### トンネル使用時の完全な手順
+
+```bash
+# ターミナル1: シグナリングサーバー（Renderを使用する場合は不要）
+cd server
+npm run dev
+
+# ターミナル2: Metro Bundler（トンネル付き）
+cd mobile
+npx expo start --dev-client --tunnel
+
+# iPhoneでアプリを起動し、HTTPSのトンネルURLを入力
+```
+
 ### トラブルシューティング
 
 #### 「サーバーに接続中」のまま動かない
