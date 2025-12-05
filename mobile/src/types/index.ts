@@ -10,6 +10,15 @@ export interface TranscriptEntry {
   isFinal: boolean;
 }
 
+// DataChannel経由で送受信する文字起こしメッセージ
+export interface TranscriptMessage {
+  type: 'transcript';
+  id: string;
+  text: string;
+  isFinal: boolean;
+  timestamp: string;
+}
+
 // ルーム情報の型定義
 export interface RoomInfo {
   id: string;

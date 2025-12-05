@@ -30,6 +30,13 @@ export default function RootLayout() {
             headerBackTitle: '戻る',
           }}
         />
+        <Stack.Screen
+          name="settings"
+          options={{
+            title: 'AI設定',
+            headerBackTitle: '戻る',
+          }}
+        />
       </Stack>
     </>
   );

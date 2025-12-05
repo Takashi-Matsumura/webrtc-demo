@@ -12,12 +12,14 @@ import {
 interface RoomFormProps {
   onCreateRoom: () => void;
   onJoinRoom: (roomId: string) => void;
+  onSettingsPress?: () => void;
   isConnected: boolean;
 }
 
 export const RoomForm: React.FC<RoomFormProps> = ({
   onCreateRoom,
   onJoinRoom,
+  onSettingsPress,
   isConnected,
 }) => {
   const [roomId, setRoomId] = useState('');
@@ -34,6 +36,13 @@ export const RoomForm: React.FC<RoomFormProps> = ({
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
+        {/* 設定ボタン */}
+        {onSettingsPress && (
+          <TouchableOpacity style={styles.settingsButton} onPress={onSettingsPress}>
+            <Text style={styles.settingsButtonText}>AI設定</Text>
+          </TouchableOpacity>
+        )}
+
         <Text style={styles.title}>音声チャット</Text>
         <Text style={styles.subtitle}>
           リアルタイム文字起こし付き
@@ -103,6 +112,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
+  },
+  settingsButton: {
+    position: 'absolute',
+    top: 60,
+    right: 24,
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  settingsButtonText: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
   },
   title: {
     fontSize: 32,

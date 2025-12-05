@@ -32,11 +32,16 @@ export default function HomeScreen() {
     router.push(`/room/${roomId}`);
   };
 
+  const handleSettingsPress = () => {
+    router.push('/settings');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <RoomForm
         onCreateRoom={handleCreateRoom}
         onJoinRoom={handleJoinRoom}
+        onSettingsPress={handleSettingsPress}
         isConnected={isConnected}
       />
     </SafeAreaView>

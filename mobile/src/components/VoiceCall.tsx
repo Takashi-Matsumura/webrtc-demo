@@ -1,10 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Clipboard } from 'react-native';
 import { useSocket } from '../hooks/useSocket';
 import { useWebRTC } from '../hooks/useWebRTC';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
+import { useLLMSettings } from '../hooks/useLLMSettings';
 import { AudioControls } from './AudioControls';
 import { Transcription } from './Transcription';
+import { SummaryModal } from './SummaryModal';
+import { TranscriptMessage } from '../types';
 
 interface VoiceCallProps {
   roomId: string;
@@ -12,14 +15,8 @@ interface VoiceCallProps {
 
 export const VoiceCall: React.FC<VoiceCallProps> = ({ roomId }) => {
   const { socket, isConnected, joinRoom, leaveRoom } = useSocket();
-  const {
-    localStream,
-    callState,
-    isMuted,
-    startCall,
-    endCall,
-    toggleMute,
-  } = useWebRTC({ socket, roomId });
+  const { settings: llmSettings } = useLLMSettings();
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
 
   const {
     isSupported,
@@ -27,10 +24,56 @@ export const VoiceCall: React.FC<VoiceCallProps> = ({ roomId }) => {
     transcripts,
     startListening,
     stopListening,
+    addRemoteTranscript,
     clearTranscripts,
   } = useSpeechRecognition();
 
+  // リモートからの文字起こしを受信したときのコールバック
+  const handleRemoteTranscript = useCallback((message: TranscriptMessage) => {
+    console.log('Received remote transcript:', message.text);
+    addRemoteTranscript(message.text, message.isFinal);
+  }, [addRemoteTranscript]);
+
+  const {
+    localStream,
+    callState,
+    isMuted,
+    startCall,
+    endCall,
+    toggleMute,
+    sendTranscript,
+  } = useWebRTC({ socket, roomId, onRemoteTranscript: handleRemoteTranscript });
+
   const hasStartedListeningRef = useRef(false);
+  const lastSentTranscriptRef = useRef<{ id: string; text: string } | null>(null);
+
+  // ローカルの文字起こしが更新されたら相手に送信
+  useEffect(() => {
+    const localTranscripts = transcripts.filter(t => t.speaker === 'local');
+    if (localTranscripts.length === 0) return;
+
+    const latest = localTranscripts[localTranscripts.length - 1];
+
+    // 同じ内容を重複送信しない
+    if (
+      lastSentTranscriptRef.current?.id === latest.id &&
+      lastSentTranscriptRef.current?.text === latest.text
+    ) {
+      return;
+    }
+
+    lastSentTranscriptRef.current = { id: latest.id, text: latest.text };
+
+    const message: TranscriptMessage = {
+      type: 'transcript',
+      id: latest.id,
+      text: latest.text,
+      isFinal: latest.isFinal,
+      timestamp: latest.timestamp.toISOString(),
+    };
+
+    sendTranscript(message);
+  }, [transcripts, sendTranscript]);
 
   // ルームに参加
   useEffect(() => {
@@ -66,6 +109,15 @@ export const VoiceCall: React.FC<VoiceCallProps> = ({ roomId }) => {
   const handleEndCall = () => {
     endCall();
     stopListening();
+    // 文字起こしがあれば要約モーダルを表示
+    if (transcripts.length > 0) {
+      setShowSummaryModal(true);
+    }
+  };
+
+  // 要約モーダルを閉じる
+  const handleCloseSummaryModal = () => {
+    setShowSummaryModal(false);
   };
 
   // ルームIDをコピー
@@ -124,6 +176,14 @@ export const VoiceCall: React.FC<VoiceCallProps> = ({ roomId }) => {
           onClear={clearTranscripts}
         />
       </View>
+
+      {/* 要約モーダル */}
+      <SummaryModal
+        visible={showSummaryModal}
+        onClose={handleCloseSummaryModal}
+        transcripts={transcripts}
+        settings={llmSettings}
+      />
     </View>
   );
 };

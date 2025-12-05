@@ -9,11 +9,12 @@ import {
   addIceCandidate,
   getUserMedia,
 } from '../lib/webrtc';
-import { CallState, ServerToClientEvents, ClientToServerEvents } from '../types';
+import { CallState, ServerToClientEvents, ClientToServerEvents, TranscriptMessage } from '../types';
 
 interface UseWebRTCProps {
   socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
   roomId: string;
+  onRemoteTranscript?: (message: TranscriptMessage) => void;
 }
 
 interface UseWebRTCReturn {
@@ -24,9 +25,10 @@ interface UseWebRTCReturn {
   startCall: () => Promise<void>;
   endCall: () => void;
   toggleMute: () => void;
+  sendTranscript: (message: TranscriptMessage) => void;
 }
 
-export const useWebRTC = ({ socket, roomId }: UseWebRTCProps): UseWebRTCReturn => {
+export const useWebRTC = ({ socket, roomId, onRemoteTranscript }: UseWebRTCProps): UseWebRTCReturn => {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [callState, setCallState] = useState<CallState>('idle');
@@ -34,9 +36,44 @@ export const useWebRTC = ({ socket, roomId }: UseWebRTCProps): UseWebRTCReturn =
 
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const remoteUserIdRef = useRef<string | null>(null);
+  const dataChannelRef = useRef<any>(null);
+  const onRemoteTranscriptRef = useRef(onRemoteTranscript);
+
+  // コールバック参照を最新に保つ
+  useEffect(() => {
+    onRemoteTranscriptRef.current = onRemoteTranscript;
+  }, [onRemoteTranscript]);
+
+  // DataChannelのセットアップ
+  const setupDataChannel = useCallback((channel: any) => {
+    channel.onopen = () => {
+      console.log('DataChannel opened');
+    };
+    channel.onclose = () => {
+      console.log('DataChannel closed');
+    };
+    channel.onmessage = (event: any) => {
+      try {
+        const message = JSON.parse(event.data) as TranscriptMessage;
+        if (message.type === 'transcript' && onRemoteTranscriptRef.current) {
+          onRemoteTranscriptRef.current(message);
+        }
+      } catch (error) {
+        console.log('DataChannel message parse error:', error);
+      }
+    };
+    dataChannelRef.current = channel;
+  }, []);
+
+  // 文字起こしを送信
+  const sendTranscript = useCallback((message: TranscriptMessage) => {
+    if (dataChannelRef.current?.readyState === 'open') {
+      dataChannelRef.current.send(JSON.stringify(message));
+    }
+  }, []);
 
   // PeerConnectionの初期化
-  const initializePeerConnection = useCallback(() => {
+  const initializePeerConnection = useCallback((isInitiator: boolean = false) => {
     const pc = createPeerConnection();
 
     pc.onicecandidate = (event: any) => {
@@ -71,9 +108,21 @@ export const useWebRTC = ({ socket, roomId }: UseWebRTCProps): UseWebRTCReturn =
       }
     };
 
+    // DataChannel: イニシエーター側が作成
+    if (isInitiator) {
+      const channel = pc.createDataChannel('transcripts');
+      setupDataChannel(channel);
+    }
+
+    // DataChannel: 受信側はondatachannelで受け取る
+    (pc as any).ondatachannel = (event: any) => {
+      console.log('DataChannel received');
+      setupDataChannel(event.channel);
+    };
+
     peerConnectionRef.current = pc;
     return pc;
-  }, [socket, roomId]);
+  }, [socket, roomId, setupDataChannel]);
 
   // 通話開始
   const startCall = useCallback(async () => {
@@ -82,7 +131,8 @@ export const useWebRTC = ({ socket, roomId }: UseWebRTCProps): UseWebRTCReturn =
       const stream = await getUserMedia();
       setLocalStream(stream);
 
-      const pc = initializePeerConnection();
+      // イニシエーターとしてDataChannelを作成
+      const pc = initializePeerConnection(true);
       stream.getTracks().forEach((track: any) => {
         pc.addTrack(track, stream);
       });
@@ -105,6 +155,8 @@ export const useWebRTC = ({ socket, roomId }: UseWebRTCProps): UseWebRTCReturn =
   // 通話終了
   const endCall = useCallback(() => {
     localStream?.getTracks().forEach((track: any) => track.stop());
+    dataChannelRef.current?.close();
+    dataChannelRef.current = null;
     peerConnectionRef.current?.close();
     peerConnectionRef.current = null;
     setLocalStream(null);
@@ -214,5 +266,6 @@ export const useWebRTC = ({ socket, roomId }: UseWebRTCProps): UseWebRTCReturn =
     startCall,
     endCall,
     toggleMute,
+    sendTranscript,
   };
 };
