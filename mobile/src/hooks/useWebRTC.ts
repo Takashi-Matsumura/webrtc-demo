@@ -76,7 +76,7 @@ export const useWebRTC = ({ socket, roomId, onRemoteTranscript }: UseWebRTCProps
   const initializePeerConnection = useCallback((isInitiator: boolean = false) => {
     const pc = createPeerConnection();
 
-    pc.onicecandidate = (event: any) => {
+    (pc as any).onicecandidate = (event: any) => {
       if (event.candidate && socket && remoteUserIdRef.current) {
         socket.emit('ice-candidate', {
           roomId,
@@ -86,14 +86,14 @@ export const useWebRTC = ({ socket, roomId, onRemoteTranscript }: UseWebRTCProps
       }
     };
 
-    pc.ontrack = (event: any) => {
+    (pc as any).ontrack = (event: any) => {
       console.log('Remote track received');
       if (event.streams && event.streams[0]) {
         setRemoteStream(event.streams[0]);
       }
     };
 
-    pc.oniceconnectionstatechange = () => {
+    (pc as any).oniceconnectionstatechange = () => {
       console.log('ICE connection state:', pc.iceConnectionState);
       switch (pc.iceConnectionState) {
         case 'connected':

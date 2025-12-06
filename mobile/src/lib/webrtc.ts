@@ -35,7 +35,7 @@ export const createAnswer = async (
   pc: RTCPeerConnection,
   offer: RTCSessionDescriptionInit
 ): Promise<RTCSessionDescriptionInit> => {
-  await pc.setRemoteDescription(new RTCSessionDescription(offer));
+  await pc.setRemoteDescription(new RTCSessionDescription(offer as any));
   const answer = await pc.createAnswer();
   await pc.setLocalDescription(answer);
   return answer;
@@ -46,7 +46,7 @@ export const setRemoteDescription = async (
   pc: RTCPeerConnection,
   description: RTCSessionDescriptionInit
 ): Promise<void> => {
-  await pc.setRemoteDescription(new RTCSessionDescription(description));
+  await pc.setRemoteDescription(new RTCSessionDescription(description as any));
 };
 
 // ICE候補の追加
