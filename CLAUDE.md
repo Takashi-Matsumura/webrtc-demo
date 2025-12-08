@@ -61,19 +61,24 @@ npx expo start --dev-client --tunnel # Tethering development
 
 The `mobile/` directory is intentionally **excluded from npm workspaces** in the root `package.json`. This is required for EAS Build compatibility - EAS Build uses `npm ci` which requires a standalone `package-lock.json` in the mobile directory.
 
-### Required Dependencies for expo-router
+### ⚠️ Critical: Expo SDK 54 Dependency Versions
 
-When using `expo-router`, these peer dependencies must be explicitly listed in `mobile/package.json`:
+**Production crash on launch** is often caused by dependency version mismatch. Use `npx expo install --check` to verify.
 
+Required versions for Expo SDK 54:
 ```json
-"react-native-gesture-handler": "~2.24.0",
-"react-native-safe-area-context": "5.4.0",
-"react-native-screens": "^4.18.0"
+"react": "19.1.0",
+"react-dom": "19.1.0",
+"react-native-gesture-handler": "~2.28.0",
+"react-native-safe-area-context": "~5.6.0",
+"react-native-screens": "~4.16.0"
 ```
+
+**Warning**: Using `react@19.2.1` or newer causes immediate crash on launch in production builds.
 
 ### Xcode/iOS SDK Compatibility
 
-- Use the latest `react-native-screens` version for Xcode 16+ / iOS SDK 26+ compatibility
+- Use `react-native-screens@~4.16.0` for Xcode 16+ / iOS SDK 26+ compatibility
 - Older versions cause `std::move` compilation errors
 
 ### Build Commands

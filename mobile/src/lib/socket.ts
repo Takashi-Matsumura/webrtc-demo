@@ -3,16 +3,42 @@ import { ServerToClientEvents, ClientToServerEvents } from '../types';
 
 // 開発時はlocalhostまたはngrok URLを使用
 // 本番環境ではサーバーのURLに変更
-const SIGNALING_SERVER_URL = process.env.EXPO_PUBLIC_SIGNALING_SERVER_URL || 'http://localhost:3001';
+const getSignalingServerUrl = (): string => {
+  try {
+    const url = process.env.EXPO_PUBLIC_SIGNALING_SERVER_URL;
+    if (url && url.length > 0) {
+      console.log('[Socket] Using signaling server:', url);
+      return url;
+    }
+    console.warn('[Socket] EXPO_PUBLIC_SIGNALING_SERVER_URL not set, using default');
+    return 'http://localhost:3001';
+  } catch (error) {
+    console.error('[Socket] Error getting signaling server URL:', error);
+    return 'http://localhost:3001';
+  }
+};
 
 let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
 
 export const getSocket = (): Socket<ServerToClientEvents, ClientToServerEvents> => {
   if (!socket) {
-    socket = io(SIGNALING_SERVER_URL, {
-      autoConnect: false,
-      transports: ['websocket'],
-    });
+    try {
+      const url = getSignalingServerUrl();
+      socket = io(url, {
+        autoConnect: false,
+        transports: ['websocket'],
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 10000,
+      });
+
+      socket.on('connect_error', (error) => {
+        console.error('[Socket] Connection error:', error.message);
+      });
+    } catch (error) {
+      console.error('[Socket] Failed to initialize socket:', error);
+      throw error;
+    }
   }
   return socket;
 };

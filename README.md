@@ -786,19 +786,38 @@ eas submit --platform ios
 
 `mobile/` はnpm workspacesから**除外**されています（ルートの`package.json`参照）。EAS Buildは`npm ci`を使用するため、`mobile/`ディレクトリに独自の`package-lock.json`が必要です。
 
-#### expo-router の必須依存関係
+#### ⚠️ Expo SDK 54 の依存関係バージョン（重要）
 
-以下のパッケージを`mobile/package.json`に明示的に追加する必要があります：
+**起動時クラッシュの主な原因**は、Expo SDK 54 と互換性のないバージョンの依存関係を使用していることです。
 
+`npx expo install --check` を実行して、推奨バージョンを確認してください。
+
+**Expo SDK 54 の推奨バージョン：**
 ```json
-"react-native-gesture-handler": "~2.24.0",
-"react-native-safe-area-context": "5.4.0",
-"react-native-screens": "^4.18.0"
+{
+  "react": "19.1.0",
+  "react-dom": "19.1.0",
+  "react-native-gesture-handler": "~2.28.0",
+  "react-native-safe-area-context": "~5.6.0",
+  "react-native-screens": "~4.16.0"
+}
 ```
 
-#### Xcode 16 / iOS SDK 26 互換性
+**注意**: `react@19.2.1` など推奨より新しいバージョンを使用すると、**アプリが起動時にクラッシュ**します。
 
-`react-native-screens`は最新版（4.18.0以上）を使用してください。古いバージョンでは`std::move`コンパイルエラーが発生します。
+#### Info.plist の権限設定
+
+App Store Connect に提出する際、以下の権限設定が必要です（`app.json` の `ios.infoPlist`）：
+
+```json
+{
+  "NSMicrophoneUsageDescription": "音声通話のためにマイクを使用します",
+  "NSSpeechRecognitionUsageDescription": "音声を文字に変換するために使用します",
+  "NSPhotoLibraryUsageDescription": "プロフィール画像の設定に使用します",
+  "NSCameraUsageDescription": "ビデオ通話のためにカメラを使用します",
+  "ITSAppUsesNonExemptEncryption": false
+}
+```
 
 ---
 
