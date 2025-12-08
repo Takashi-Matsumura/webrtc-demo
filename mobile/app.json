@@ -18,7 +18,8 @@
       "bundleIdentifier": "com.takashimats.voicechat",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "音声通話のためにマイクを使用します",
-        "NSSpeechRecognitionUsageDescription": "音声を文字に変換するために使用します"
+        "NSSpeechRecognitionUsageDescription": "音声を文字に変換するために使用します",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -38,6 +39,12 @@
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e31a0936-4b09-4b42-b510-e615c68442d0"
+      }
+    }
   }
 }
