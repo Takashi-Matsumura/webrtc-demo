@@ -55,6 +55,35 @@ npx expo start --dev-client          # WiFi development
 npx expo start --dev-client --tunnel # Tethering development
 ```
 
+## EAS Build (TestFlight/App Store)
+
+### Important: Mobile is NOT in npm workspaces
+
+The `mobile/` directory is intentionally **excluded from npm workspaces** in the root `package.json`. This is required for EAS Build compatibility - EAS Build uses `npm ci` which requires a standalone `package-lock.json` in the mobile directory.
+
+### Required Dependencies for expo-router
+
+When using `expo-router`, these peer dependencies must be explicitly listed in `mobile/package.json`:
+
+```json
+"react-native-gesture-handler": "~2.24.0",
+"react-native-safe-area-context": "5.4.0",
+"react-native-screens": "^4.18.0"
+```
+
+### Xcode/iOS SDK Compatibility
+
+- Use the latest `react-native-screens` version for Xcode 16+ / iOS SDK 26+ compatibility
+- Older versions cause `std::move` compilation errors
+
+### Build Commands
+
+```bash
+cd mobile
+eas build --platform ios --profile production    # Production build for App Store
+eas submit --platform ios                        # Submit to App Store Connect
+```
+
 ## Claude Skills
 
 For detailed development guides, see `.claude/skills/`:

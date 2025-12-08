@@ -772,14 +772,33 @@ eas submit --platform ios
 
 ### 本番環境チェックリスト
 
-- [ ] Renderにシグナリングサーバーをデプロイ
-- [ ] サーバーURLを取得（`https://xxx.onrender.com`）
-- [ ] `mobile/.env.production` にURLを設定
-- [ ] `mobile/eas.json` のプロファイルを更新
-- [ ] Apple Developer Program に登録（$99/年）
-- [ ] EAS Buildで本番ビルドを作成
-- [ ] App Store Connect にアップロード
+- [x] Renderにシグナリングサーバーをデプロイ (`https://webrtc-signaling-0vv4.onrender.com`)
+- [x] `mobile/.env.production` にURLを設定
+- [x] `mobile/eas.json` のプロファイルを更新
+- [x] Apple Developer Program に登録（$99/年）
+- [x] EAS Buildで本番ビルドを作成
+- [ ] App Store Connect にアップロード (`eas submit --platform ios`)
 - [ ] TestFlightでテスター招待
+
+### EAS Build トラブルシューティング
+
+#### npm workspaces との互換性
+
+`mobile/` はnpm workspacesから**除外**されています（ルートの`package.json`参照）。EAS Buildは`npm ci`を使用するため、`mobile/`ディレクトリに独自の`package-lock.json`が必要です。
+
+#### expo-router の必須依存関係
+
+以下のパッケージを`mobile/package.json`に明示的に追加する必要があります：
+
+```json
+"react-native-gesture-handler": "~2.24.0",
+"react-native-safe-area-context": "5.4.0",
+"react-native-screens": "^4.18.0"
+```
+
+#### Xcode 16 / iOS SDK 26 互換性
+
+`react-native-screens`は最新版（4.18.0以上）を使用してください。古いバージョンでは`std::move`コンパイルエラーが発生します。
 
 ---
 

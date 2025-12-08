@@ -119,6 +119,93 @@ eas submit --platform ios --latest
 | Build stuck in processing | Wait up to 30 minutes, or rebuild |
 | TestFlight invite not received | Check spam folder, verify email address |
 
+## EAS Build Troubleshooting
+
+### npm workspaces との競合
+
+**問題**: `npm ci can only install packages when your package.json and package-lock.json are in sync`
+
+**原因**: npm workspacesを使用しているモノレポ構成では、子ディレクトリ（mobile/）に独立したpackage-lock.jsonが生成されない。EAS Buildは`npm ci`を使用するため、package-lock.jsonが必要。
+
+**解決方法**:
+```json
+// root package.json - mobile を workspaces から除外
+{
+  "workspaces": [
+    "web",
+    "server"
+    // "mobile" を削除
+  ]
+}
+```
+
+その後、mobile/ で独立した package-lock.json を生成:
+```bash
+cd mobile
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### expo-router のピア依存関係
+
+**問題**: `Unable to find a specification for RNScreens depended upon by ExpoHead`
+
+**原因**: expo-router は react-native-screens などのピア依存関係を必要とするが、明示的にインストールされていない。
+
+**解決方法**: mobile/package.json に以下を追加:
+```json
+{
+  "dependencies": {
+    "react-native-gesture-handler": "~2.24.0",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-screens": "^4.18.0"
+  }
+}
+```
+
+### Xcode 16 / iOS SDK 26 互換性
+
+**問題**: `no member named 'move' in namespace 'std'` (RNSScreenStackHeaderConfig.mm)
+
+**原因**: react-native-screens 4.10.0 以前は Xcode 16 / iOS SDK 26 と互換性がない。
+
+**解決方法**: react-native-screens を 4.18.0 以上にアップグレード:
+```bash
+npm install react-native-screens@^4.18.0
+```
+
+### 推奨 eas.json 設定
+
+```json
+{
+  "build": {
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_SIGNALING_SERVER_URL": "https://your-server.com",
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+      },
+      "node": "22.12.0"
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "your-apple-id@example.com",
+        "appleTeamId": "YOUR_TEAM_ID"
+      }
+    }
+  }
+}
+```
+
+### ビルド成功のためのチェックリスト
+
+- [ ] mobile が npm workspaces から除外されている
+- [ ] mobile/ に独立した package-lock.json がある
+- [ ] expo-router のピア依存関係がインストールされている
+- [ ] react-native-screens が 4.18.0 以上
+- [ ] eas.json に appleTeamId が設定されている
+
 ## Important Notes
 
 - TestFlight builds expire after 90 days
