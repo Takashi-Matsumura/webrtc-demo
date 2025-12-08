@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.takashimats.voicechat",
-      "buildNumber": "15",
+      "buildNumber": "16",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "音声通話のためにマイクを使用します",
         "NSSpeechRecognitionUsageDescription": "音声を文字に変換するために使用します",

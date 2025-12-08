@@ -13,6 +13,10 @@ export default function RootLayout() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="settings"
+        options={{ title: 'AI設定', headerBackTitle: '戻る' }}
+      />
+      <Stack.Screen
         name="room/[id]"
         options={{ title: 'ルーム', headerBackTitle: '戻る' }}
       />
