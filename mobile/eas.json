@@ -20,9 +20,9 @@
       "env": {
         "EXPO_PUBLIC_SIGNALING_SERVER_URL": "https://webrtc-signaling-0vv4.onrender.com"
       },
-      "node": "20.18.0",
-      "cache": {
-        "paths": ["../node_modules"]
+      "node": "22.12.0",
+      "install": {
+        "command": "npm install --legacy-peer-deps"
       }
     }
   },
