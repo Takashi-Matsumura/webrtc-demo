@@ -4,7 +4,6 @@
   "private": true,
   "workspaces": [
     "web",
-    "mobile",
     "server"
   ],
   "scripts": {
