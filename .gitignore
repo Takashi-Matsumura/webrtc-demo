@@ -50,3 +50,6 @@ android/
 *.swp
 *.swo
 *~
+
+# Crash logs
+crush-feedback/
