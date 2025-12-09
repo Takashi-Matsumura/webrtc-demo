@@ -777,8 +777,8 @@ eas submit --platform ios
 - [x] `mobile/eas.json` のプロファイルを更新
 - [x] Apple Developer Program に登録（$99/年）
 - [x] EAS Buildで本番ビルドを作成
-- [ ] App Store Connect にアップロード (`eas submit --platform ios`)
-- [ ] TestFlightでテスター招待
+- [x] App Store Connect にアップロード (`eas submit --platform ios`)
+- [x] TestFlightでテスター招待・動作確認完了
 
 ### EAS Build トラブルシューティング
 
@@ -818,6 +818,17 @@ App Store Connect に提出する際、以下の権限設定が必要です（`a
   "ITSAppUsesNonExemptEncryption": false
 }
 ```
+
+---
+
+## ドキュメント
+
+詳細なガイドは `docs/` ディレクトリを参照してください：
+
+| ドキュメント | 内容 |
+|-------------|------|
+| [App Store 公開ガイド](docs/app-store-publishing-guide.md) | React Native アプリを App Store に公開するまでの完全ガイド（Mermaid図付き） |
+| [外部テスター招待ガイド](docs/testflight-external-testers.md) | TestFlight で外部テスターを招待する方法 |
 
 ---
 
